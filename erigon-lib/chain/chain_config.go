@@ -417,6 +417,8 @@ type BorConfig struct {
 	IndoreBlock                *big.Int          `json:"indoreBlock"`                // Indore switch block (nil = no fork, 0 = already on indore)
 	StateSyncConfirmationDelay map[string]uint64 `json:"stateSyncConfirmationDelay"` // StateSync Confirmation Delay, in seconds, to calculate `to`
 
+	ParallelUniverseBlock *big.Int `json:"parallelUniverseBlock"` // TODO: update all occurrence, change name and finalize number (hardfork for block-stm related changes)
+
 	sprints sprints
 }
 
@@ -518,6 +520,17 @@ func (c *BorConfig) IsIndore(number uint64) bool {
 
 func (c *BorConfig) CalculateStateSyncDelay(number uint64) uint64 {
 	return borKeyValueConfigHelper(c.StateSyncConfirmationDelay, number)
+}
+
+// TODO: modify this function once the block number is finalized
+func (c *BorConfig) IsParallelUniverse(number uint64) bool {
+	if c.ParallelUniverseBlock != nil {
+		if c.ParallelUniverseBlock.Cmp(big.NewInt(0)) == 0 {
+			return false
+		}
+	}
+
+	return isForked(c.ParallelUniverseBlock, number)
 }
 
 func (c *BorConfig) calcConfig(field map[string]uint64, number uint64) uint64 {
