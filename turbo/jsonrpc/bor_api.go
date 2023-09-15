@@ -2,6 +2,7 @@ package jsonrpc
 
 import (
 	"github.com/ledgerwatch/erigon-lib/common"
+	"github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
 	"github.com/ledgerwatch/erigon-lib/kv"
 
 	"github.com/ledgerwatch/erigon/consensus/bor/valset"
@@ -25,15 +26,17 @@ type BorAPI interface {
 // BorImpl is implementation of the BorAPI interface
 type BorImpl struct {
 	*BaseAPI
-	db    kv.RoDB // the chain db
-	borDb kv.RoDB // the consensus db
+	db     kv.RoDB // the chain db
+	borDb  kv.RoDB // the consensus db
+	txPool txpool.TxpoolClient
 }
 
 // NewBorAPI returns BorImpl instance
-func NewBorAPI(base *BaseAPI, db kv.RoDB, borDb kv.RoDB) *BorImpl {
+func NewBorAPI(base *BaseAPI, db kv.RoDB, borDb kv.RoDB, txpool txpool.TxpoolClient) *BorImpl {
 	return &BorImpl{
 		BaseAPI: base,
 		db:      db,
 		borDb:   borDb,
+		txPool:  txpool,
 	}
 }

@@ -31,7 +31,7 @@ func APIList(db kv.RoDB, borDb kv.RoDB, eth rpchelper.ApiBackend, txPool txpool.
 	dbImpl := NewDBAPIImpl() /* deprecated */
 	adminImpl := NewAdminAPI(eth)
 	parityImpl := NewParityAPIImpl(base, db)
-	borImpl := NewBorAPI(base, db, borDb) // bor (consensus) specific
+	borImpl := NewBorAPI(base, db, borDb, txPool) // bor (consensus) specific
 	otsImpl := NewOtterscanAPI(base, db, cfg.OtsMaxPageSize)
 	gqlImpl := NewGraphQLAPI(base, db)
 
