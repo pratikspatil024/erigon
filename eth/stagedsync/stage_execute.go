@@ -453,6 +453,13 @@ Loop:
 			break
 		}
 
+		blockDep := block.GetTxDependency()
+		fmt.Println("PSP - ----------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+		fmt.Println("PSP - in SpawnExecuteBlocksStage")
+		fmt.Println("PSP - block number      - ", blockNum, block.Number())
+		fmt.Println("PSP - blockTxDependency - ", blockDep)
+		fmt.Println("PSP - ----------------------------------------------------------------------------------------------------------------------------------------------------------------------")
+
 		lastLogTx += uint64(block.Transactions().Len())
 
 		// Incremental move of next stages depend on fully written ChangeSets, Receipts, CallTraceSet
