@@ -202,32 +202,33 @@ type TxPool struct {
 	//   - batch notifications about new txs (reduced P2P spam to other nodes about txs propagation)
 	//   - and as a result reducing lock contention
 	unprocessedRemoteTxs    *types.TxSlots
-	unprocessedRemoteByHash map[string]int                                  // to reject duplicates
-	byHash                  map[string]*metaTx                              // tx_hash => tx : only those records not committed to db yet
-	discardReasonsLRU       *simplelru.LRU[string, txpoolcfg.DiscardReason] // tx_hash => discard_reason : non-persisted
-	pending                 *PendingPool
-	baseFee                 *SubPool
-	queued                  *SubPool
-	minedBlobTxsByBlock     map[uint64][]*metaTx             // (blockNum => slice): cache of recently mined blobs
-	minedBlobTxsByHash      map[string]*metaTx               // (hash => mt): map of recently mined blobs
-	isLocalLRU              *simplelru.LRU[string, struct{}] // tx_hash => is_local : to restore isLocal flag of unwinded transactions
-	newPendingTxs           chan types.Announcements         // notifications about new txs in Pending sub-pool
-	all                     *BySenderAndNonce                // senderID => (sorted map of tx nonce => *metaTx)
-	deletedTxs              []*metaTx                        // list of discarded txs since last db commit
-	promoted                types.Announcements
-	cfg                     txpoolcfg.Config
-	chainID                 uint256.Int
-	lastSeenBlock           atomic.Uint64
-	lastFinalizedBlock      atomic.Uint64
-	started                 atomic.Bool
-	pendingBaseFee          atomic.Uint64
-	pendingBlobFee          atomic.Uint64 // For gas accounting for blobs, which has its own dimension
-	blockGasLimit           atomic.Uint64
-	shanghaiTime            *uint64
-	isPostShanghai          atomic.Bool
-	cancunTime              *uint64
-	isPostCancun            atomic.Bool
-	logger                  log.Logger
+	unprocessedRemoteByHash map[string]int // to reject duplicates
+	// PSP
+	byHash              map[string]*metaTx                              // tx_hash => tx : only those records not committed to db yet
+	discardReasonsLRU   *simplelru.LRU[string, txpoolcfg.DiscardReason] // tx_hash => discard_reason : non-persisted
+	pending             *PendingPool
+	baseFee             *SubPool
+	queued              *SubPool
+	minedBlobTxsByBlock map[uint64][]*metaTx             // (blockNum => slice): cache of recently mined blobs
+	minedBlobTxsByHash  map[string]*metaTx               // (hash => mt): map of recently mined blobs
+	isLocalLRU          *simplelru.LRU[string, struct{}] // tx_hash => is_local : to restore isLocal flag of unwinded transactions
+	newPendingTxs       chan types.Announcements         // notifications about new txs in Pending sub-pool
+	all                 *BySenderAndNonce                // senderID => (sorted map of tx nonce => *metaTx)
+	deletedTxs          []*metaTx                        // list of discarded txs since last db commit
+	promoted            types.Announcements
+	cfg                 txpoolcfg.Config
+	chainID             uint256.Int
+	lastSeenBlock       atomic.Uint64
+	lastFinalizedBlock  atomic.Uint64
+	started             atomic.Bool
+	pendingBaseFee      atomic.Uint64
+	pendingBlobFee      atomic.Uint64 // For gas accounting for blobs, which has its own dimension
+	blockGasLimit       atomic.Uint64
+	shanghaiTime        *uint64
+	isPostShanghai      atomic.Bool
+	cancunTime          *uint64
+	isPostCancun        atomic.Bool
+	logger              log.Logger
 }
 
 func New(newTxs chan types.Announcements, coreDB kv.RoDB, cfg txpoolcfg.Config, cache kvcache.Cache, chainID uint256.Int, shanghaiTime, cancunTime *big.Int, logger log.Logger) (*TxPool, error) {

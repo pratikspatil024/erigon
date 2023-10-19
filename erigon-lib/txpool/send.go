@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"sync"
 
+	types3 "github.com/ledgerwatch/erigon/core/types"
+
 	"github.com/ledgerwatch/erigon-lib/direct"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces/sentry"
 	"github.com/ledgerwatch/erigon-lib/rlp"
@@ -97,13 +99,25 @@ func (f *Send) BroadcastPooledTxs(rlps [][]byte) (txSentTo []int) {
 						MaxPeers: 100,
 					}
 				}
-				peers, err := sentryClient.SendMessageToRandomPeers(f.ctx, txs66)
+
+				// Decode the transaction to check if it's EIP-4337 bundled transaction
+				// PSP - is this correct way to get the transaction?
+				tx, err := types3.DecodeWrappedTransaction(rlps[i])
+				// tx, err := types3.UnmarshalTransactionFromBinary(rlps[i])
 				if err != nil {
-					f.logger.Debug("[txpool.send] BroadcastPooledTxs", "err", err)
+					return
 				}
-				if peers != nil {
-					for j := prev; j <= i; j++ {
-						txSentTo[j] = len(peers.Peers)
+
+				// Skip EIP-4337 bundled transactions
+				if tx.GetOptions() == nil {
+					peers, err := sentryClient.SendMessageToRandomPeers(f.ctx, txs66)
+					if err != nil {
+						f.logger.Debug("[txpool.send] BroadcastPooledTxs", "err", err)
+					}
+					if peers != nil {
+						for j := prev; j <= i; j++ {
+							txSentTo[j] = len(peers.Peers)
+						}
 					}
 				}
 			}
@@ -122,7 +136,23 @@ func (f *Send) AnnouncePooledTxs(types []byte, sizes []uint32, hashes types2.Has
 	}
 	prevI := 0
 	prevJ := 0
+	txnIdx := -1 // used to track the index of the transaction in `hashes`
 	for prevI < len(hashes) || prevJ < len(types) {
+
+		txnIdx++
+		// get transaction (tx) and check for options
+		hash := hashes.At(txnIdx)
+		// PSP - is this correct way to get the transaction?
+		tx, err := types3.UnmarshalTransactionFromBinary(hash)
+		// tx, err := types3.DecodeWrappedTransaction(hash)
+		if err != nil {
+			// PSP - log error/return?
+		}
+
+		if tx.GetOptions() != nil {
+			// skip EIP-4337 bundled transactions
+		}
+
 		// Prepare two versions of the announcement message, one for pre-eth/68 peers, another for post-eth/68 peers
 		i := prevI
 		for i < len(hashes) && rlp.HashesLen(hashes[prevI:i+32]) < p2pTxPacketLimit {
@@ -142,6 +172,7 @@ func (f *Send) AnnouncePooledTxs(types []byte, sizes []uint32, hashes types2.Has
 		if s := rlp.EncodeAnnouncements(types[prevJ:j], sizes[prevJ:j], hashes[32*prevJ:32*j], jData); s != jSize {
 			panic(fmt.Sprintf("Serialised announcements encoding len mismatch, expected %d, got %d", jSize, s))
 		}
+
 		for _, sentryClient := range f.sentryClients {
 			if !sentryClient.Ready() {
 				continue

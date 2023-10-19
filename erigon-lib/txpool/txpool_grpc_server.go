@@ -38,6 +38,8 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/emptypb"
 
+	types3 "github.com/ledgerwatch/erigon/core/types"
+
 	"github.com/ledgerwatch/erigon-lib/common"
 	"github.com/ledgerwatch/erigon-lib/gointerfaces"
 	txpool_proto "github.com/ledgerwatch/erigon-lib/gointerfaces/txpool"
@@ -192,6 +194,17 @@ func (s *GrpcServer) Add(ctx context.Context, in *txpool_proto.AddRequest) (*txp
 		slots.Resize(uint(j + 1))
 		slots.Txs[j] = &types.TxSlot{}
 		slots.IsLocal[j] = true
+
+		txn, err := types3.UnmarshalTransactionFromBinary(in.RlpTxs[i])
+		if err != nil {
+			return nil, errors.New("cannot unmarshal transaction")
+		}
+
+		if txn.GetOptions() != nil {
+			// PSP - how to check for a miner node?
+			// do not add this transaction to the txpool
+		}
+
 		if _, err := parseCtx.ParseTransaction(in.RlpTxs[i], 0, slots.Txs[j], slots.Senders.At(j), false /* hasEnvelope */, true /* wrappedWithBlobs */, func(hash []byte) error {
 			if known, _ := s.txPool.IdHashKnown(tx, hash); known {
 				return types.ErrAlreadyKnown
